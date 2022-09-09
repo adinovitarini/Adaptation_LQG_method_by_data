@@ -1,10 +1,8 @@
 %% Third Scenario : KalmanNet and VI
 function [P,u,x_hat,y,J,K] = combine_kn_vi(A,B,C,Q,R,N,x_hat_net)
 [P_vi,K_vi_old,~] = value_iteration(A,N,B,Q,R);
-mans = norm(K_vi_old);
-[~,idx] = max(mans);
 x_hat_kn_vi = x_hat_net;
-KK = K_vi_old(idx,:);
+KK = K_vi_old;
 for i = 1:N
     u_kn_vi(1,i) = -KK*x_hat_kn_vi(:,i);
     y_hat_kn_vi(i) = C*x_hat_kn_vi(:,i);
