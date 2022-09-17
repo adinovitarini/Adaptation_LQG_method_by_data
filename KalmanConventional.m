@@ -14,7 +14,7 @@ v = w;
 % w = unifrnd(0,Rww,N,1);
 % v = unifrnd(0,Rvv,N,1);
 %%  Init
-% Rww = 0.1*ones(4,N); %Q=Rww
+% Rww = 0.1*ones(size(A,1),size(A,1)); %Q=Rww
 % Rvv = 0.0001; %R=Rvv
 P = rand(size(A,1),size(A,1),N); %Matriks covariance state estimate
 %% Iteration
