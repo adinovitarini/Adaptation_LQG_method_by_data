@@ -16,10 +16,6 @@ u = 0;
 %%  Apply Disturbance 
 w = wgn(N,1,1);
 v = w;
-Rww = 10;
-Rvv = 1;
-% w = unifrnd(0,Rww,N,1);
-% v = unifrnd(0,Rvv,N,1);
 %%  Open Loop System
 x = .1*ones(4,1);
 for i = 1:N
@@ -27,34 +23,14 @@ for i = 1:N
     y(i) = C*x(:,i)+v(i);
     x(:,i) = x(:,i+1);
 end
+%% Weight Matrices 
+Rww = 0.01;
+Rvv = 1;
+Q = .01;
+R = .1;
 %%  LQG Conventional 
-R = 1;
-Rww = [0.01;0.05;0.1;0.5;1];
-for i = 1:5
-%     Rww(i) = 10^-i;
-    [~,LL(:,i),~] = kalman(sys,Rww(i),R);
-    [L(:,:,i),~] = KalmanConventional(sys,N,Rww(i),Rvv);
-    [K(i,:),~,cl(:,i)] = lqr(sys,Rww(i),R);
-end
-for i = 1:5
-    for j = 1:4
-        L_norm(j,i) = norm(L(j,:,i));
-    end
-    L_normm(i) = norm(L_norm(:,i));
-end
-[val,idx] = min(L_normm);
-L_kf = L(:,:,idx);
-LL_kf = LL(:,idx);
-K_lqr = K(idx,:);
-% Observer-based-controller 
-x_hat = ones(4,1,5);
-for i = 1:N
-    for j = 1:5
-        u_c(j,i) = -K(j,:)*x_hat(:,i,j);
-        y_hat(j,i) = C*x_hat(:,i,j);
-        x_hat(:,i+1,j) = (A-B*K(j,:))*x_hat(:,i,j)+L(:,j)*(y_hat(i)-y(i));
-    end
-end
+[~,L,~] = kalman(sys,Rww,Rvv);
+[K,~,cl] = lqr(sys,Q,R);
 %%  Observer via KalmanNet
 x_nw = ones(size(A,1),1);
 for i = 1:N
@@ -70,28 +46,29 @@ KG = KalmanNet(delta_x,target,A,C);
 delta_y = y+(-1*y_nw);
 x_hat_net = (KG*delta_y')+x_nw;
 y_hat_net = C*x_hat_net;
-%%  First scenario : KF-VI   
-Q = 1;
-R = .1;
-[P_kf_vi,u_kf_vi,x_hat_kf_vi,y_kf_vi,J_kf_vi,K_kf_vi,L_kf_vi] = combine_kf_vi(A,B,C,Q,R,N,L_kf,y);
-% for i = 1:size(x_hat_kf_vi,1)
-%     x_hat_kf_vi(i,:) = normalize(x_hat_kf_vi(i,:));
-% end
-%%  Second scenario : KalmanNet-LQR   
-% Implement KalmanNet-LQR 
+
+%% First scenario : LQG konvensional 
+x_lqg = x;
+x_hat_lqg = x;
+y_lqg = y;
+L_lqg = L;
+K_lqg = K;
+for i = 1:N
+    u_lqg(i) = -K_lqg*x_lqg(:,i);
+    x_hat_lqg(:,i+1) = A*x_hat_lqg(:,i)+B*u_lqg(i);
+    y_hat_lqg(i) = C*x_hat_lqg(:,i);
+    x_lqg(:,i+1) = (A-B*K_lqg)*x_lqg(:,i)+L_lqg*(y_hat_lqg(i)-y_lqg(i));
+    y_lqg(i) = C*x_lqg(:,i);
+end
+%%  Second scenario : KF-VI   
+[P_kf_vi,u_kf_vi,x_hat_kf_vi,y_kf_vi,J_kf_vi,K_kf_vi,L_kf_vi] = combine_kf_vi(A,B,C,Q,R,N,L,y);
+%%  Third scenario : KalmanNet-LQR   
 [P_kn_lqr,u_kn_lqr,x_hat_kn_lqr,y_kn_lqr,J_kn_lqr,K_kn_lqr] = combine_kn_lqr(A,B,C,Q,R,N,x_hat_net);
-% for i = 1:size(x_hat_kn_lqr,1)
-%     x_hat_kn_lqr(i,:) = normalize(x_hat_kn_lqr(i,:));
-% end
-%%  Third scenario : KalmanNet-VI
-%Implement Value Iteration 
+%%  Fourth scenario : KalmanNet-VI
 [P_kn_vi,u_kn_vi,x_hat_kn_vi,y_kn_vi,J_kn_vi,K_kn_vi] = combine_kn_vi(A,B,C,Q,R,N,x_hat_net);
-% for i = 1:size(x_hat_kn_vi,1)
-%     x_hat_kn_vi(i,:) = normalize(x_hat_kn_vi(i,:));
-% end
 %% Stability Analysis 
 for i = 1:N
-eig_kf_vi(:,i) = eig(A-B*K_kf_vi(i,:)-L_kf_vi(:,i)*C);
+eig_kf_vi(:,i) = eig(A-B*K_kf_vi(i,:)-L_kf_vi*C);
 eig_kn_lqr(:,i) = eig(A-B*K_kn_lqr-KG(1,i)*C);
 eig_kn_vi(:,i) = eig(A-B*K_kn_vi(i,:)-KG(1,i)*C);
 end
@@ -103,77 +80,3 @@ for j = 1:size(A,1)
     norm_eig_kn_lqr(j,1) = max(eig_kn_lqr(j,:));
     norm_eig_kn_vi(j,1) = max(eig_kn_vi(j,:));
 end
-%% Display to command window 
-clc
-fprintf('Norm Ac 1^{st} scenario : \n %f %f %f %f\n',norm_eig_kf_vi)
-fprintf('Norm Ac 2^{nd} scenario : \n %f %f %f %f\n',norm_eig_kn_lqr)
-fprintf('Norm Ac 3^{rd} scenario : \n %f %f %f %f\n',norm_eig_kn_vi)
-%  Visualize the eigenvalues
-figure(1);clf
-plot(real(eig_kf_vi(1,:)),'-ob','markersize',2)
-hold on
-plot(real(eig_kf_vi(2,:)),'-or','markersize',2)
-hold on
-plot(real(eig_kf_vi(3,:)),'-ok','markersize',2)
-hold on
-plot(real(eig_kf_vi(4,:)),'-om','markersize',2)
-grid on
-% xlim([1 N])
-xlabel('Iteration Step')
-ylabel('$eig(A-BK-LC)$','Interpreter','latex')
-legend('$\hat{x}_1$','$\hat{x}_2$','$\hat{x}_3$','$\hat{x}_4$','Interpreter','latex')
-title('The Evolution of Eigenvalues on 1^{st} scenario : Combination KF and VI')
-figure(2);clf
-plot(real(eig_kn_lqr(1,:)),'-ob','markersize',2)
-hold on
-plot(real(eig_kn_lqr(2,:)),'-or','markersize',2)
-hold on
-plot(real(eig_kn_lqr(3,:)),'-ok','markersize',2)
-hold on
-plot(real(eig_kn_lqr(4,:)),'-om','markersize',2)
-grid on
-% xlim([1 N])
-xlabel('Iteration Step')
-ylabel('$eig(A-BK-LC)$','Interpreter','latex')
-legend('$\hat{x}_1$','$\hat{x}_2$','$\hat{x}_3$','$\hat{x}_4$','Interpreter','latex')
-title('The Evolution of Eigenvalues on 2^{nd} scenario : Combination KN and LQR')
-figure(3);clf
-plot(real(eig_kn_vi(1,:)),'-ob','markersize',2)
-hold on
-plot(real(eig_kn_vi(2,:)),'-or','markersize',2)
-hold on
-plot(real(eig_kn_vi(3,:)),'-ok','markersize',2)
-hold on
-plot(real(eig_kn_vi(4,:)),'-om','markersize',2)
-grid on
-% xlim([1 N])
-xlabel('Iteration Step')
-ylabel('$eig(A-BK-LC)$','Interpreter','latex')
-legend('$\hat{x}_1$','$\hat{x}_2$','$\hat{x}_3$','$\hat{x}_4$','Interpreter','latex')
-title('The Evolution of Eigenvalues on 3^{rd} scenario : Combination KN and VI')
-figure(4);clf
-plot(u_kf_vi','-ob','markersize',2);
-hold on
-plot(u_kn_lqr','-or','markersize',2);
-hold on
-plot(u_kn_vi','-ok','markersize',2);
-grid on
-title('Control Signal')
-xlim([1 N])
-xlabel('Iteration step')
-ylabel('$u_k(x_k)$','Interpreter','latex')
-legend('1^{st} scenario : Combination KF-VI','2^{nd} scenario : Combination KN-LQR','3^{rd} scenario : Combination KN-VI')
-figure(5);clf 
-title('The state trajectories')
-for i = 1:size(A,1)
-subplot(2,2,i)
-plot(x_hat_kf_vi(i,1:N),'-ob','markersize',2);
-hold on
-plot(x_hat_kn_lqr(i,1:N),'-or','markersize',2);
-hold on
-plot(x_hat_kn_vi(i,1:N),'-ok','markersize',2);
-hold on
-grid on
-xlabel('Iteration step')
-end
-legend('1^{st} scenario : Combination KF-VI','2^{nd} scenario : Combination KN-LQR','3^{rd} scenario : Combination KN-VI')
