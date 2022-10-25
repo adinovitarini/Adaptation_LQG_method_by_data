@@ -80,11 +80,3 @@ for j = 1:size(A,1)
     norm_eig_kn_lqr(j,1) = max(eig_kn_lqr(j,:));
     norm_eig_kn_vi(j,1) = max(eig_kn_vi(j,:));
 end
-%% Display the output 
-clc
-fprintf('Kalman gain from KF : %f \n',norm(L))
-fprintf('Kalman gain from KN : %f \n',norm(KG))
-fprintf('Controller gain from LQR : %f \n',norm(K))
-fprintf('Controller gain from VI : %f \n',norm(K_kf_vi))
-fprintf('Controller gain from LQR : %f \n',norm(K_kn_lqr))
-fprintf('Controller gain from VI : %f \n',norm(K_kn_vi))
