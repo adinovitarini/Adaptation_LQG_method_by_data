@@ -1,9 +1,9 @@
 %% Linearize
-function [A,B,C] = linearizeModel(trainedNetwork_3)
-nh = trainedNetwork_3.Layers(2).NumHiddenUnits
-Wa = trainedNetwork_3.Layers(2).RecurrentWeights(1:nh,:);
-Wb = trainedNetwork_3.Layers(2).InputWeights(1:nh,1);
-Wc = trainedNetwork_3.Layers(3).Weights;
+function [A,B,C] = linearizeModel(net)
+nh = net.Layers(2).NumHiddenUnits
+Wa = net.Layers(2).RecurrentWeights(1:nh,:);
+Wb = net.Layers(2).InputWeights(1:nh,1);
+Wc = net.Layers(3).Weights;
 disp('The nonlinearity function : \n');
 disp('1. Sigmoid')
 disp('2. Tanh')
