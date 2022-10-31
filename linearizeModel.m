@@ -1,12 +1,12 @@
-function [Model,x,y] = linearizeModel(trainedNetwork_3,consig)
-nh = trainedNetwork_3.Layers(2).NumHiddenUnits;
-Rw = trainedNetwork_3.Layers(2).RecurrentWeights;
+function [Model,x,y] = linearizeModel(net,consig)
+nh = net.Layers(2).NumHiddenUnits;
+Rw = net.Layers(2).RecurrentWeights;
 for i = 1:4
 w(:,:,i) = Rw(((i-1)*nh)+1:(i*nh),:);
 end
 Wa = w(:,:,3);
-Wb = trainedNetwork_3.Layers(2).InputWeights(1:nh,1);
-Wc = trainedNetwork_3.Layers(3).Weights;
+Wb = net.Layers(2).InputWeights(1:nh,1);
+Wc = net.Layers(3).Weights;
 disp('The nonlinearity function : \n');
 disp('1. Sigmoid')
 disp('2. Tanh')
