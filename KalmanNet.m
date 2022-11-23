@@ -28,8 +28,10 @@ options = trainingOptions('adam', ...
 %% Train LSTM Net
 net = trainNetwork(X,Y,layers,options);
 %% Predict 
-net = predictAndUpdateState(net,X);
-[net,KG] = predictAndUpdateState(net,target);
+for i = 1:N
+    nets(i) = predictAndUpdateState(net,X(:,i));
+    KG(:,i) = nets(i).Layers(2).HiddenState;
+end
 % x_hat_next = (KG*Y')+x_hat_kf;
 % y_hat = C*x_hat_next;
 end
