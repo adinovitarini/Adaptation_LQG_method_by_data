@@ -1,22 +1,22 @@
+% clearvars -except data 
+tic
 clear all;clc
-g = 9.8e-1;
-lp = 1.5;
-mp = 0.1;
-mk = 1;
-mt = 1.1;
-a = g/(lp*(4/3 -mp/(mp+mk)));
-AA = [0 1 0 0;0 0 mp/mk*g 0;0 0 0 1;0 0 (mt)*g/(lp*mk) 0];
-b = -1/(lp*(4/3 -mp/(mp+mk)));
-BB = [0;1/mk;0;1/(lp*mk)];
-CC = [0 1 0 1];
+z = tf('z');
+AA = [1.1367 -0.77978 -0.41183 -0.93463 0;
+    1.0468 1.0221 0.51514 0.55115 0;
+    -0.77322 0.73872 -0.83021 0.0026816 0;
+    1.1816 0.95094 -0.65203 -0.78764 0;
+    0 0 0 0 1];
+BB = [-1.3696;0.45253;1.0801;-0.37804;1];
+CC = [0.72552 -0.78382 0.97289 -0.3413 1];
 D = 0;
-N = 100;
-u = 0;
-df = .1; %discount factor 
+df = .01; %discount factor 
 A = sqrt(df)*AA;
 B = sqrt(df)*BB;
 C = sqrt(df)*CC;
 sys = ss(A,B,C,D,0.01);
+N = 100;
+u = 0;
 %%  Apply Disturbance 
 w = wgn(N,1,1);
 v = w;
@@ -91,7 +91,8 @@ for i = 1:N
     y_lqg(i) = C*x_lqg(:,i);
 end
 J_lqg = value_func(x_hat_lqg,u_lqg,Q,R,N);
-%% State Transition 
+
+% %% State Transition 
 % Acl_kf_vi = [A-B*K_kf_vi(end,:) B*K_kf_vi(end,:);zeros(size(A,1),size(A,1)) A-L_kf_vi*C].^100;
 % Acl_kn_lqr = [A-B*K_kn_lqr B*K_kn_lqr;zeros(size(A,1),size(A,1)) A-KG(1,end)*C].^100;
 % Acl_kn_vi = [A-B*K_kn_vi(end,:) B*K_kn_vi(end,:);zeros(size(A,1),size(A,1)) A-KG(1,end)*C].^100;
@@ -112,18 +113,13 @@ J_lqg = value_func(x_hat_lqg,u_lqg,Q,R,N);
 %     [norm_eig_kn_vi(j,1),idx3(j,1)] = max(eig_kn_vi(j,:));
 %     [norm_eig_lqg(j,1),idx4(j,1)] = max(eig_lqg(j,:));
 % end
-% clc
-% % fprintf('CL-Eigenvalue scenario 1 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_kf_vi(:,1))
-% % fprintf('CL-Eigenvalue scenario 2 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_kn_lqr(:,1))
-% % fprintf('CL-Eigenvalue scenario 3 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_kn_vi(:,1))
-% % fprintf('CL-Eigenvalue scenario 4 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_lqg(:,1))
-% %% State Transition 
-% % % K_kn_lqr = ones(N,size(A,1)).*K_kn_lqr;
-% % % L_kf_vi = ones(size(A,1),N).*L_kf_vi;
-% % % psi_kf_vi = stateTransition(A,B,C,N,K_kf_vi,L_kf_vi);
-% % % psi_kn_lqr = stateTransition(A,B,C,N,K_kn_lqr,KG);
-% % % psi_kn_vi = stateTransition(A,B,C,N,K_kn_vi,KG);
-% %% Plot
+clc
+% fprintf('CL-Eigenvalue scenario 1 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_kf_vi(:,1))
+% fprintf('CL-Eigenvalue scenario 2 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_kn_lqr(:,1))
+% fprintf('CL-Eigenvalue scenario 3 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_kn_vi(:,1))
+% fprintf('CL-Eigenvalue scenario 4 : \n %f \n%f \n%f \n%f \n%f \n%f \n%f \n%f \n',eig_lqg(:,1))
+
+%% Plot
 % figure(1);clf
 % plot(real(eig_kf_vi(1,:)),'-ob','markersize',2)
 % hold on
@@ -216,15 +212,15 @@ J_lqg = value_func(x_hat_lqg,u_lqg,Q,R,N);
 % ylabel('$eig(A_c(k))$','Interpreter','latex')
 % legend('$x_1$','$x_2$','$x_3$','$x_4$','$\tilde{x}_1$','$\tilde{x}_2$','$\tilde{x}_3$','$\tilde{x}_4$','Interpreter','latex')
 % title('The Evolution of Eigenvalues on 4^{th} scenario : LQG')
-% %% Display the output 
-% % % clc
-% % % fprintf('Kalman gain from KF : %f \n',norm(L))
-% % % fprintf('Kalman gain from KN : %f \n',norm(KG))
-% % % fprintf('Controller gain from LQR : %f \n',norm(K))
-% % % fprintf('Controller gain from VI : %f \n',norm(K_kf_vi))
-% % fprintf('Controller gain from LQR : %f \n',norm(K_kn_lqr))
-% % fprintf('Controller gain from VI : %f \n',norm(K_kn_vi))
-% % fprintf('Error norm from 1st scenario : %f \n',norm(x-x_lqg));
-% % fprintf('Error norm from 2nd scenario : %f \n',norm(x-x_hat_kf_vi));
-% % fprintf('Error norm from 3rd scenario : %f \n',norm(x-x_hat_kn_lqr));
-% % fprintf('Error norm from 4th scenario : %f \n',norm(x-x_hat_kn_vi));
+%% Display the output 
+% clc
+% fprintf('Kalman gain from KF : %f \n',norm(L))
+% fprintf('Kalman gain from KN : %f \n',norm(KG))
+% fprintf('Controller gain from LQR : %f \n',norm(K))
+% fprintf('Controller gain from VI : %f \n',norm(K_kf_vi))
+% fprintf('Controller gain from LQR : %f \n',norm(K_kn_lqr))
+% fprintf('Controller gain from VI : %f \n',norm(K_kn_vi))
+% fprintf('Error norm from 1st scenario : %f \n',norm(x-x_lqg));
+% fprintf('Error norm from 2nd scenario : %f \n',norm(x-x_hat_kf_vi));
+% fprintf('Error norm from 3rd scenario : %f \n',norm(x-x_hat_kn_lqr));
+% fprintf('Error norm from 4th scenario : %f \n',norm(x-x_hat_kn_vi));
