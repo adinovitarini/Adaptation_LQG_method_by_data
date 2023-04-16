@@ -1,10 +1,5 @@
-function KG = KalmanNet(delta_x,target,A,C)
-%%  Normalize state trajectories
-% delta_x = [x_next_nw;y];
-% % delta_x = x_next_nw;
-
-%%  Propagate 
-x_hat_kf = A*delta_x(1:end-1,:);
+function KG = KalmanNet(delta_x,target,u,A,C,B)
+x_hat_kf = A*delta_x(1:end-1,:)+B*u;
 y_hat_kf = C*x_hat_kf;
 X = delta_x;
 Y = target(1,:);
