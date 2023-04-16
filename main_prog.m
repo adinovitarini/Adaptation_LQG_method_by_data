@@ -10,8 +10,11 @@ cartpole = sysmdl_cartpole(N);
 dataset_cp = GenerateSeq(cartpole.sys,N,Rww,Rvv,Q,R);
 delta_x_cp = [dataset_cp.x(:,1:end-1);dataset_cp.y];
 target_cp = [dataset_cp.x_nw(:,1:end-1);dataset_cp.y_nw];
+u_cp = dataset_cp.u(:,1:end-1);
+%%
 tic;
-[KG_cp,net_cp] = KalmanNet(delta_x_cp,target_cp,cartpole.sys.A,cartpole.sys.C,N);
+% (delta_x,target,u,A,B,C,N)
+[KG_cp,net_cp] = KalmanNet(delta_x_cp,target_cp,u_cp,cartpole.sys.A,cartpole.sys.B,cartpole.sys.C,N);
 time_kn_cp = toc;
 %%  Implement KG for state estimation process (u:LQR)
 delta_y_cp = dataset_cp.y-dataset_cp.y_nw;
@@ -25,8 +28,9 @@ distillate = sysmdl_distillate(N);
 dataset_dt = GenerateSeq(distillate.sys,N,Rww,Rvv,Q,R);
 delta_x_dt = [dataset_dt.x(:,1:end-1);dataset_dt.y];
 target_dt = [dataset_dt.x_nw(:,1:end-1);dataset_dt.y_nw];
+u_dt = dataset_dt.u(:,1:end-1);
 tic;
-[KG_dt,net_dt] = KalmanNet(delta_x_dt,target_dt,distillate.sys.A,distillate.sys.C,N);
+[KG_dt,net_dt] = KalmanNet(delta_x_dt,target_dt,u_dt,distillate.sys.A,distillate.sys.B,distillate.sys.C,N);
 time_kn_dt = toc;
 %%  Implement KG for state estimation process (u:LQR)
 delta_y_dt = dataset_dt.y-dataset_dt.y_nw;
