@@ -5,9 +5,9 @@ tic
 K_vi = K_vi_old;
 x_hat_kf_vi = ones(size(A,1),1);
 for i = 1:N
-    u_kf_vi(i) = -K_vi(i,:)*x_hat_kf_vi(:,i);
-    y_hat_kf_vi(i) = C*x_hat_kf_vi(:,i);
-    x_hat_kf_vi(:,i+1) = (A-B*K_vi(i,:))*x_hat_kf_vi(:,i)+L_kf*(y_hat_kf_vi(i)-y(i));         
+    u_kf_vi(:,i) = -K_vi(i,:)*x_hat_kf_vi(:,i);
+    y_hat_kf_vi(:,i) = C*x_hat_kf_vi(:,i);
+    x_hat_kf_vi(:,i+1) = (A-B*K_vi(i,:))*x_hat_kf_vi(:,i)+L_kf(:,i)*(y_hat_kf_vi(:,i)-y(:,i));         
 end
 % Value function 
 J_kf_vi = value_func(x_hat_kf_vi,u_kf_vi,Q,R,N);
